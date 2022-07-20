@@ -25,8 +25,6 @@ python demo.py -h
                         Stops inference after frame limit is reached
   --record_file RECORD_FILE
                         Record results to specified video file
-  --framework {onnx,furiosa}
-                        Which backend to use
 ```
 
 Example
