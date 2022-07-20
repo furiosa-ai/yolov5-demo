@@ -82,8 +82,8 @@ def draw_bboxes(ori_img, bbox, identities=None, offset=(0, 0), cvt_color=False):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True, help="Path to video file")
-    parser.add_argument("--model", required=True, help="Path to onnx weights")
+    parser.add_argument("--input", required=True, help="Path to image / image folder / video file")
+    parser.add_argument("--model", required=True, help="Path to onnx weights folder")
     parser.add_argument("--no_display", action="store_true", help="Disables displaying results on the screen (useful for server)")
     parser.add_argument("--frame_limit", type=int, help="Stops inference after frame limit is reached")
     parser.add_argument("--record_file", help="Record results to specified video file (e.g. \"out.mp4\")")
