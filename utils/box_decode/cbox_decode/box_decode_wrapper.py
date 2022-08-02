@@ -1,8 +1,8 @@
 import ctypes
 import numpy as np
-import os
+from pathlib import Path
 
-_clib = ctypes.CDLL(os.path.join(os.path.dirname(__file__), 'cbox_decode.so'))
+_clib = ctypes.CDLL(str(Path(__file__).parent / 'cbox_decode.so'))
 
 
 def _init():

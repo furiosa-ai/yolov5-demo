@@ -80,13 +80,44 @@ def draw_bboxes(ori_img, bbox, identities=None, offset=(0, 0), cvt_color=False):
     return img
 
 
+def file_path(path_type="file_dir", ext=None, force_exist=True):
+    assert path_type in ("file", "dir", "file_dir")
+
+    if ext is not None:
+        path_type = "file"
+
+    def _checker(path):
+        path = Path(path)
+
+        if path_type == "file":
+            if not path.is_file():
+                raise FileNotFoundError(path)
+        elif path_type == "dir":
+            if not path.is_dir():
+                raise NotADirectoryError(path)
+        elif path_type == "file_dir":
+            if not path.exists():
+                raise FileNotFoundError(path)
+
+        if ext is not None:
+            if path.suffix != ext:
+                raise Exception(f"{path} is not a {ext} file")
+
+        return path
+
+    return _checker
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True, help="Path to image / image folder / video file")
-    parser.add_argument("--model", required=True, help="Path to onnx weights folder")
-    parser.add_argument("--no_display", action="store_true", help="Disables displaying results on the screen (useful for server)")
-    parser.add_argument("--frame_limit", type=int, help="Stops inference after frame limit is reached")
-    parser.add_argument("--record_file", help="Record results to specified video file (e.g. \"out.mp4\")")
+    parser.add_argument("--input", required=True, type=file_path(), help="Path to image / image folder / video file")
+    parser.add_argument("--model", required=True, type=file_path(path_type="dir"), help="Path to onnx weights folder")
+    parser.add_argument("--framework", required=True, default="onnx", choices=("onnx", "furiosa"), help="Which backend to use")
+    parser.add_argument("--calib-data", default="../data/bdd100k/images/100k/test", type=file_path(path_type="dir"), help="Path to calibration data containing image files")
+    parser.add_argument("--calib-data-count", default=10, type=int, help="How many images to use for calibration")
+    parser.add_argument("--no-display", action="store_true", help="Disables displaying results on the screen (useful for server)")
+    parser.add_argument("--frame-limit", type=int, help="Stops inference after frame limit is reached")
+    parser.add_argument("--record-file", help="Record results to specified video file (e.g. \"out.mp4\")")
     args = parser.parse_args()
 
     frame_limit = args.frame_limit
@@ -95,11 +126,13 @@ def main():
     output_writer = VideoRecord(str(record_file)) if record_file is not None else None
 
     model_path = Path(args.model)
-    framework = "onnx"
+    framework = args.framework
     weights = model_path / "weights.onnx"
     cfg_file = model_path / "cfg.yaml"
+    calib_data = args.calib_data
+    calib_data_count = args.calib_data_count
 
-    detector = Yolov5Detector(weights, cfg_file, framework)
+    detector = Yolov5Detector(weights, cfg_file, framework, calib_data, calib_data_count)
 
     frame_count = frame_limit if frame_limit is not None else len(input_reader)
     input_is_img = len(input_reader) == 1
