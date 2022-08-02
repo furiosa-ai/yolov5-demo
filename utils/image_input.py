@@ -89,13 +89,13 @@ class CapInput(ImageInput):
 class ImageFolderInput(ImageInput):
     def __init__(self, path,):
         path = Path(path)
-        self.files = path.glob("*") if path.is_dir() else [str(path)]
+        self.files = sorted(path.glob("*")) if path.is_dir() else [str(path)]
         self.frame_idx = 0
 
         assert len(self.files) > 0
 
     def read(self):
-        img = cv2.imread(self.files[self.frame_idx])
+        img = cv2.imread(str(self.files[self.frame_idx]))
         self.frame_idx += 1
 
         return img
