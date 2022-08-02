@@ -9,9 +9,12 @@ pip install -r requirements.txt
 ./build.sh
 ```
 
-## Files
+## Weights
 
 Download weights from [here](https://drive.google.com/file/d/1Cdvld9ASNpnMUAVC10aDSNUBeLYlFBhB/view?usp=sharing) and extract to "./weights"
+
+## Calibration
+Download BDD100K dataset from [here](https://doc.bdd100k.com/download.html) or prepare own dataset for calibration
 
 ## Run
 
