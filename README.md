@@ -2,6 +2,7 @@
 
 ## Setup environment
 ```bash
+sudo apt-get install ffmpeg 
 git clone git@github.com:furiosa-ai/yolov5-demo.git
 cd yolov5-demo
 conda activate <env>
