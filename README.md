@@ -55,3 +55,27 @@ python demo.py \
   --calib-data ../data/bdd100k/images/100k/test \
   --calib-data-count 10
 ```
+
+
+## Export
+
+```bash
+python export.py -h
+  --weights WEIGHTS     Path to Pytorch weights
+  --name NAME           Name to store model
+  --size SIZE           Image input size
+  --classes CLASSES [CLASSES ...]
+                        Class names
+```
+
+Example
+```bash
+# Export Pytorch weights to onnx
+# Output model saved to weights/yolov5l_bdd100k_640
+# Classes are optional
+python export.py \
+  --weights ../yolov5/runs/train/l_bdd/weights/best.pt \
+  --name yolov5l_bdd100k_640 \
+  --classes "person" "rider" "car" "truck" "bus" \
+    "train" "motor" "bike" "traffic light" "traffic sign"
+```

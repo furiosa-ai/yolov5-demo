@@ -112,7 +112,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, type=file_path(), help="Path to image / image folder / video file")
     parser.add_argument("--model", required=True, type=file_path(path_type="dir"), help="Path to onnx weights folder")
-    parser.add_argument("--framework", required=True, default="onnx", choices=("onnx", "furiosa"), help="Which backend to use")
+    parser.add_argument("--framework", required=True, choices=("onnx", "furiosa"), help="Which backend to use")
     parser.add_argument("--calib-data", default="../data/bdd100k/images/100k/test", type=file_path(path_type="dir"), help="Path to calibration data containing image files")
     parser.add_argument("--calib-data-count", default=10, type=int, help="How many images to use for calibration")
     parser.add_argument("--no-display", action="store_true", help="Disables displaying results on the screen (useful for server)")
