@@ -166,6 +166,8 @@ class Yolov5Detector(Predictor):
         calib_files = sorted(self.calib_data_path.glob("*"))
         random.Random(123).shuffle(calib_files)  # shuffle with seed
 
+        assert len(calib_files) > 0, f"no calib files found at {self.calib_data_path}"
+
         if self.calib_data_count is not None:
             calib_files = calib_files[:self.calib_data_count]
 
@@ -173,7 +175,7 @@ class Yolov5Detector(Predictor):
             img = cv2.imread(str(file))
             inputs, _ = self.preproc(img, input_format="chw", input_prec="f32")
             inputs = inputs[None]  # insert batch dim
-            return {self.input_name: inputs}
+            return [inputs]
 
         return (_load_data(f) for f in calib_files)
 

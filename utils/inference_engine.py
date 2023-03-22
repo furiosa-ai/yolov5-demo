@@ -3,6 +3,15 @@ import numpy as np
 import onnx
 from pathlib import Path
 
+from tqdm import tqdm
+
+
+def _get_onnx_input_names(model):
+    input_all = [input.name for input in model.graph.input]
+    input_initializer = [input.name for input in model.graph.initializer]
+    input_names = list(set(input_all) - set(input_initializer))
+    return input_names
+
 
 class InferenceEngine:
     def __init__(self) -> None:
@@ -73,53 +82,56 @@ class InferenceEngineFuriosa(InferenceEngine):
         input_format = predictor.input_format
 
         onnx_file = Path(onnx_file)
-        if not str(onnx_file).endswith("_i8.onnx"):
-            onnx_i8_file = onnx_file.parent / (onnx_file.stem + "_i8" + onnx_file.suffix)
+        if not str(onnx_file).endswith("_i8.dfg"):
+            dfg_file = onnx_file.parent / (onnx_file.stem + "_i8.dfg")
         else:
-            onnx_file, onnx_i8_file = None, onnx_file
+            onnx_file, dfg_file = None, onnx_file
 
-        if not onnx_i8_file.exists():
-            self.quantize(onnx_file, onnx_i8_file, predictor.get_calib_dataset())
+        if not dfg_file.exists():
+            self.quantize(onnx_file, dfg_file, predictor.get_calib_dataset(), input_prec)
 
-        if not (input_prec == "f32" and input_format == "chw"):
-            assert input_prec in ("f32", "i8")
-            assert input_format in ("chw", "hwc")
-
-            assert not (input_prec == "f32" and input_format != "chw")
-            assert input_prec == "i8", "Nothing to do"
-
-            compile_config = {
-                "without_quantize": {
-                    "parameters": [
-                        {
-                            "input_min": 0.0, "input_max": 1.0, 
-                            "permute": [0, 2, 3, 1] if input_format == "hwc" else [0, 1, 2, 3]
-                        }
-                    ]
-                },
+        if input_format == "hwc":
+            compiler_config = {
+                "permute_input": [
+                    [0, 2, 3, 1],
+                ],
             }
         else:
-            compile_config = None
+            compiler_config = None
 
-        self.sess = session.create(str(onnx_i8_file), device=device, compile_config=compile_config)
+        self.sess = session.create(str(dfg_file), device=device, compiler_config=compiler_config)
 
-    def quantize(self, onnx_file, onnx_i8_file, calib_dataset):
-        from furiosa.quantizer.frontend.onnx import optimize_model
-        from furiosa.quantizer.frontend.onnx.calibrate import calibrate
-        from furiosa.quantizer.frontend.onnx.quantizer.utils import QuantizationMode
-        from furiosa.quantizer.frontend.onnx.quantizer import quantizer
+    def quantize(self, onnx_file, dfg_file, calib_dataset, input_prec, input_min=0, input_max=1):
+        from furiosa.optimizer import optimize_model
+        from furiosa.quantizer import quantize, Calibrator, CalibrationMethod
 
         model = onnx.load_model(onnx_file)
-        optimized_model = optimize_model(model)
+        model = optimize_model(model)
         print("optimized model")
 
-        dynamic_ranges = calibrate(optimized_model, calib_dataset)
+        input_names = _get_onnx_input_names(model)
 
-        quant_model = quantizer.FuriosaONNXQuantizer(
-            optimized_model, True, True, QuantizationMode.DFG, dynamic_ranges
-        ).quantize()
+        model = model.SerializeToString()
+        calibrator = Calibrator(model, CalibrationMethod.MIN_MAX)
 
-        onnx.save_model(quant_model, onnx_i8_file)
+        for input_batch in tqdm(calib_dataset, "Computing ranges"):
+            calibrator.collect_data([input_batch])
+
+        ranges = calibrator.compute_range()
+        print("Quantizing...")
+
+        if input_prec == "i8":
+            # override min and max of input tensors
+            for input_name in input_names:
+                ranges[input_name] = (input_min, input_max)
+            graph = quantize(model, ranges, with_quantize=False)
+        else:
+            graph = quantize(model, ranges, with_quantize=True)
+        print("Quantized model")
+        graph = bytes(graph)
+
+        with open(dfg_file, "wb") as f:
+            f.write(graph)
 
     def get_input_shapes(self):
         inputs = self.sess.inputs()
