@@ -112,7 +112,7 @@ class InferenceEngineFuriosa(InferenceEngine):
         input_names = _get_onnx_input_names(model)
 
         model = model.SerializeToString()
-        calibrator = Calibrator(model, CalibrationMethod.MIN_MAX)
+        calibrator = Calibrator(model, CalibrationMethod.MIN_MAX_SYM)
 
         for input_batch in tqdm(calib_dataset, "Computing ranges"):
             calibrator.collect_data([input_batch])
