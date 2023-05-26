@@ -118,6 +118,7 @@ def main():
     parser.add_argument("--no-display", action="store_true", help="Disables displaying results on the screen (useful for server)")
     parser.add_argument("--frame-limit", type=int, help="Stops inference after frame limit is reached")
     parser.add_argument("--record-file", help="Record results to specified video file (e.g. \"out.mp4\")")
+    parser.add_argument("--size", nargs="+", type=int, default=(640, 384), help="Image input size")
     args = parser.parse_args()
 
     frame_limit = args.frame_limit
@@ -132,7 +133,7 @@ def main():
     calib_data = args.calib_data
     calib_data_count = args.calib_data_count
 
-    detector = Yolov5Detector(weights, cfg_file, framework, calib_data, calib_data_count)
+    detector = Yolov5Detector(weights, cfg_file, framework, calib_data, calib_data_count, input_size=args.size)
 
     frame_count = frame_limit if frame_limit is not None else len(input_reader)
     input_is_img = len(input_reader) == 1

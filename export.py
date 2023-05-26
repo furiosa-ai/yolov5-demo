@@ -21,11 +21,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", required=True, help="Path to Pytorch weights")
     parser.add_argument("--name", required=True, help="Name to store model")
-    parser.add_argument("--size", type=int, default=640, help="Image input size")
     parser.add_argument("--classes", nargs="+", help="Class names")
     args = parser.parse_args()
 
-    input_size = (args.size, args.size)
+    input_size = (512, 512)  # (args.size, args.size)
     batch_size = 1
     out_path = root_path / "weights" / args.name
 
@@ -58,7 +57,9 @@ def main():
         model, 
         x,
         model_file,
-        opset_version=12
+        opset_version=12,
+        input_names=["input"],
+        dynamic_axes={"input": {0: "b", 2: "h", 3: "w"}}
     )
 
     with open(cfg_file, "w") as f:

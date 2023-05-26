@@ -63,7 +63,6 @@ python demo.py \
 python export.py -h
   --weights WEIGHTS     Path to Pytorch weights
   --name NAME           Name to store model
-  --size SIZE           Image input size
   --classes CLASSES [CLASSES ...]
                         Class names
 ```

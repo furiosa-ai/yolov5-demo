@@ -1,4 +1,7 @@
 import random
+import onnx
+from pathlib import Path
+
 import numpy as np
 import cv2
 import yaml
@@ -7,12 +10,26 @@ from utils.box_decode.box_decoder import BoxDecoderPytorch, BoxDecoderC
 from utils.nms import nms
 
 from utils.inference_engine import InferenceEngineOnnx, InferenceEngineFuriosa
+from utils.onnx_util import update_inputs_dims
 from utils.transforms import letterbox
+
+
+def _update_onnx_input_shape(model_file, shapes):
+    model_file = Path(model_file)
+    model_file_reshaped = model_file.parent / (model_file.stem + "_" 
+                                               + "_".join(["x".join([(str(s) if s is not None else "0") for s in shape]) for shape in shapes]) + model_file.suffix)
+
+    if not model_file_reshaped.exists():
+        model = onnx.load(str(model_file))
+        model = update_inputs_dims(model, shapes)
+        onnx.save(model, str(model_file_reshaped))
+
+    return model_file_reshaped
 
 
 class Yolov5Detector(Predictor):
     def __init__(self, model_file, cfg_file, framework, calib_data_path=None, calib_data_count=None, conf_thres=0.25, iou_thres=0.45, 
-        input_color_format="bgr", box_decoder="c") -> None:
+        input_color_format="bgr", box_decoder="c", input_size=None) -> None:
 
         self.input_color_format = input_color_format
         self.calib_data_path = calib_data_path
@@ -27,6 +44,9 @@ class Yolov5Detector(Predictor):
 
         self.input_format = input_format
         self.input_prec = input_prec
+
+        if input_size is not None:
+            model_file = _update_onnx_input_shape(model_file, [[1, 3, input_size[1], input_size[0]]])
 
         # load input name and shape in advance from onnx file
         input_name, input_shape = Yolov5Detector._get_input_name_shape(model_file)
